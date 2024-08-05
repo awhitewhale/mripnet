@@ -12,6 +12,8 @@ MRIP-Net features:
 
 Through multi-level feature extraction, fusion, and reconstruction, MRIP-Net generates high-quality reflection-free images. Additionally, we have constructed a new multi-modal RGB-NIR image reflection removal dataset (MIRR dataset), providing a reliable benchmark for research and evaluation of image reflection removal algorithms. Experimental results show that MRIP-Net significantly outperforms other methods in the image reflection removal task.
 
+![MRIP-Net](MRIP-Net.png)
+
 ## 📂 Resources
 
 - **MIRR Dataset**: [Download here](https://mcmasteru365-my.sharepoint.com/:u:/g/personal/liu2259_mcmaster_ca/EdUamCz1XgxNrqeTTltZSiQBOkxd3QzLpnPI649ho2_xqw?e=wZldeh)
