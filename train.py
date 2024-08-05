@@ -249,8 +249,6 @@ def arg():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train', type=str, default='MIRR/reflect_train/')
     parser.add_argument('--test', type=str, default='MIRR/reflect_test/')
-    # parser.add_argument('--train', type=str, default='/home/liuyifan/project/dataset/minidataset//reflect/')
-    # parser.add_argument('--test', type=str, default='/home/liuyifan/project/dataset/minidataset/reflect/')
     parser.add_argument('--savedir', type=str, default='savedir/')
     parser.add_argument('--epoch', type=int, default=200)
     parser.add_argument('--warmup_epoch', type=int, default=30)
@@ -305,7 +303,7 @@ if __name__ == '__main__':
 
             optimizer.zero_grad()
 
-            outputs, _, _ = model(rgb, nir)
+            outputs = model(rgb, nir)
             rgb_recons, rgb_out1, nir_recons = outputs
 
             loss1 = criterion(rgb_recons, input_gt)
@@ -324,9 +322,9 @@ if __name__ == '__main__':
         grid_img = make_grid(rgb_recons, nrow=8)
         save_image(grid_img, 'train_output/{}.png'.format(epoch))
         psnr1 = psnr(rgb_recons, input_gt)
-        print(f'Epoch [{epoch + 1}/{args.epoch}], Loss: {running_loss / len(train_loader)}, PSNR: {psnr1}, SSIM: {1- loss}')
+        print(f'Epoch [{epoch + 1}/{args.epoch}], Loss: {running_loss / len(train_loader)}, PSNR: {psnr1}')
         if psnr1 >= max_psnr:
-            torch.save(model.state_dict(), "trained_model/loss{}_psnr{}_ssim{}.pth".format(running_loss, psnr1, loss))
+            torch.save(model.state_dict(), "trained_model/loss{}_psnr{}.pth".format(running_loss, psnr1))
             max_psnr = psnr1
     print('Finished Training')
 

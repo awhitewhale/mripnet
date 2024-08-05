@@ -363,4 +363,4 @@ class MRIPF(nn.Module):
         for i in range(3):
             weighted_ir[i] = masks[i] * nir_feat[i]
 
-        return [rgb_recons, rgb_out1, nir_recons], [rgb_structure, nir_structure], [feat_rgb_decode, nir_feat, masks, weighted_ir]
+        return [rgb_recons, rgb_out1, nir_recons]
