@@ -30,6 +30,7 @@ Through multi-level feature extraction, fusion, and reconstruction, MRIP-Net gen
 2. **Download and prepare the MIRR dataset**:
     - Download the [MIRR dataset](https://mcmasteru365-my.sharepoint.com/:u:/g/personal/liu2259_mcmaster_ca/EdUamCz1XgxNrqeTTltZSiQBOkxd3QzLpnPI649ho2_xqw?e=wZldeh) and unzip it.
     - Split the dataset into training and testing sets.
+    - (Optional) If you are interested in the reflection layer (noise layer) of the MIRR Dataset, you can apply for it here: https://rose1.ntu.edu.sg/dataset/sir2Benchmark/
 
 3. **Set up the environment**:
     ```sh
