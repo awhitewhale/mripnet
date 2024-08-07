@@ -311,56 +311,64 @@ class MRIPF(nn.Module):
 
         act = nn.PReLU()
 
-        self.SFAM = nn.Sequential(Conv(3, n_feat, kernel_size, bias=bias),
+        self.SFAM_nir = nn.Sequential(Conv(3, n_feat, kernel_size, bias=bias),
                                               RCAB(n_feat, kernel_size, reduction, bias=bias, act=act),
                                               RCAB(n_feat, kernel_size, reduction, bias=bias, act=act))
-        self.shallow_feat_rgb = nn.Sequential(Conv(3, n_feat, kernel_size, bias=bias),
+        self.SFAM_rgb = nn.Sequential(Conv(3, n_feat, kernel_size, bias=bias),
                                               RCAB(n_feat, kernel_size, reduction, bias=bias, act=act),
                                               RCAB(n_feat, kernel_size, reduction, bias=bias, act=act))
 
-        self.DFEM_encoder = Encoder(n_feat, kernel_size, reduction, act, bias, scale_unetfeats, atten=False)
-        self.DFEM_decoder = Decoder(n_feat, kernel_size, reduction, act, bias, scale_unetfeats, residual=True)
+        self.DFEM_nir_encoder = Encoder(n_feat, kernel_size, reduction, act, bias, scale_unetfeats, atten=False)
+        self.DFEM_nir_decoder = Decoder(n_feat, kernel_size, reduction, act, bias, scale_unetfeats, residual=True)
 
-        self.rgb_encoder = Encoder(n_feat, kernel_size, reduction, act, bias, scale_unetfeats, atten=True)
-        self.rgb_decoder = Decoder(n_feat, kernel_size, reduction, act, bias, scale_unetfeats, residual=True)
+        self.DFEM_rgb_encoder = Encoder(n_feat, kernel_size, reduction, act, bias, scale_unetfeats, atten=True)
+        self.DFEM_rgb_decoder = Decoder(n_feat, kernel_size, reduction, act, bias, scale_unetfeats, residual=True)
 
-        self.nir_output = Output(n_feat, kernel_size=1, bias=bias, output_channel=3)
-        self.rgb_output = Output(n_feat, kernel_size=1, bias=bias, output_channel=3)
+        self.RIRM_nir = Output(n_feat, kernel_size=1, bias=bias, output_channel=3)
+        self.RIRM_rgb = Output(n_feat, kernel_size=1, bias=bias, output_channel=3)
 
         self.DSEM_nir = Structure(n_feat, kernel_size, reduction, act, bias, scale_unetfeats)
         self.DSEM_rgb = Structure(n_feat, kernel_size, reduction, act, bias, scale_unetfeats)
 
     def forward(self, rgb, nir):
-        SFAM_nir = self.SFAM(nir)
+        SFAM_nir = self.SFAM_nir(nir)
 
-        SFAM_nir_encode = self.DFEM_encoder(SFAM_nir)
-        SFAM_nir_decode = self.DFEM_decoder(SFAM_nir_encode)
+        SFAM_nir_encode = self.DFEM_nir_encoder(SFAM_nir)
+        SFAM_nir_decode = self.DFEM_nir_decoder(SFAM_nir_encode)
 
-        nir_structure, _ = self.DSEM_nir(SFAM_nir_encode, SFAM_nir_decode, mid=True)
+        DSEM_nir_structure, _ = self.DSEM_nir(SFAM_nir_encode, SFAM_nir_decode, mid=True)
 
-        nir_recons = self.nir_output(SFAM_nir_decode[0], nir)
+        nir_recons = self.RIRM_nir(SFAM_nir_decode[0], nir)
 
-        feat_rgb = self.shallow_feat_rgb(rgb)
+        feat_rgb = self.SFAM_rgb(rgb)
 
-        feat_rgb_encode = self.rgb_encoder(feat_rgb)
-        feat_rgb_decode = self.rgb_decoder(feat_rgb_encode)
+        feat_rgb_encode = self.DFEM_rgb_encoder(feat_rgb)
+        feat_rgb_decode = self.DFEM_rgb_decoder(feat_rgb_encode)
 
-        rgb_out1 = self.rgb_output(feat_rgb_decode[0], rgb)
-        feat_rgb = self.shallow_feat_rgb(rgb_out1)
+        rgb_out1 = self.RIRM_rgb(feat_rgb_decode[0], rgb)
+        feat_rgb = self.SFAM_rgb(rgb_out1)
 
         rgb_structure = self.DSEM_rgb(feat_rgb_encode, feat_rgb_decode)
 
         masks = []
         for i in range(len(rgb_structure)):
-            masks.append(f_Re(rgb_structure[i], nir_structure[i]))
+            masks.append(f_Re(rgb_structure[i], DSEM_nir_structure[i]))
 
-        feat_rgb_encode, nir_feat = self.rgb_encoder(feat_rgb, nir_structure, masks)
+        feat_rgb_encode, nir_feat = self.DFEM_rgb_encoder(feat_rgb, DSEM_nir_structure, masks)
 
-        feat_rgb_decode = self.rgb_decoder(feat_rgb_encode)
-        rgb_recons = self.rgb_output(feat_rgb_decode[0], rgb_out1)
+        feat_rgb_decode = self.DFEM_rgb_decoder(feat_rgb_encode)
+        rgb_recons = self.RIRM_rgb(feat_rgb_decode[0], rgb_out1)
 
         weighted_ir = [None for _ in range(3)]
         for i in range(3):
             weighted_ir[i] = masks[i] * nir_feat[i]
 
         return [rgb_recons, rgb_out1, nir_recons]
+
+    def count_parameters(self):
+        return sum(p.numel() for p in self.parameters())
+
+if __name__=="__main__":
+    model = MRIPF()
+    total_params = model.count_parameters()
+    print(f'Total number of parameters: {total_params}')
